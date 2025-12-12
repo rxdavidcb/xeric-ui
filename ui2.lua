@@ -1,3 +1,8 @@
+--[[
+- Created by fluflu
+- used for Xeric Hub
+- this UI is free to use for everyone else
+]]--
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
@@ -9,7 +14,6 @@ local MainFrame
 local ContentFrame
 local TabContainer
 local NotificationHolder
-local isMinimized = false
 
 local Theme = {
     Background = Color3.fromRGB(15, 15, 15),
@@ -59,9 +63,6 @@ function Library:CreateWindow(config)
     config = config or {}
     local windowName = config.Name or "Fluent UI"
     
-    local ORIGINAL_SIZE = UDim2.new(0, 800, 0, 600) -- Increased window size
-    local MINIMIZED_SIZE = UDim2.new(0, 250, 0, 50) -- Increased minimized size
-    
     ScreenGui = Instance.new("ScreenGui")
     ScreenGui.Name = "FluentUI"
     ScreenGui.Parent = game.CoreGui
@@ -72,9 +73,10 @@ function Library:CreateWindow(config)
     MainFrame.Name = "MainFrame"
     MainFrame.Parent = ScreenGui
     MainFrame.BackgroundColor3 = Theme.Background
-    MainFrame.BorderSizePixel = 0
-    MainFrame.Position = UDim2.new(0.5, -400, 0.5, -300) -- Adjusted position for new size
-    MainFrame.Size = ORIGINAL_SIZE
+    MainFrame.BorderSizePixel = 
+ 0
+    MainFrame.Position = UDim2.new(0.5, -350, 0.5, -250)
+    MainFrame.Size = UDim2.new(0, 700, 0, 500)
     MainFrame.ClipsDescendants = true
     
     local mainCorner = Instance.new("UICorner")
@@ -119,66 +121,14 @@ function Library:CreateWindow(config)
     title.Parent = topBar
     title.BackgroundTransparency = 1
    
- title.Position = UDim2.new(0, 20, 0, 0)
+  title.Position = UDim2.new(0, 20, 0, 0)
     title.Size = UDim2.new(0, 300, 1, 0)
     title.Font = Enum.Font.GothamBold
     title.Text = windowName
     title.TextColor3 = Theme.Text
     title.TextSize = 18
     title.TextXAlignment = Enum.TextXAlignment.Left
-
-    local minimizeBtn = Instance.new("TextButton")
-    minimizeBtn.Name = "MinimizeButton"
-    minimizeBtn.Parent = topBar
-    minimizeBtn.BackgroundColor3 = Theme.Tertiary
-    minimizeBtn.BorderSizePixel = 0
-    minimizeBtn.Position = UDim2.new(1, -75, 0.5, -15)
-    minimizeBtn.Size = UDim2.new(0, 30, 0, 30)
-    minimizeBtn.Font = Enum.Font.GothamBold
-    minimizeBtn.Text = "_"
-    minimizeBtn.TextColor3 = Theme.Text
-    minimizeBtn.TextSize = 14
-    minimizeBtn.AutoButtonColor = false
     
-    local minimizeCorner = Instance.new("UICorner")
-    minimizeCorner.CornerRadius = UDim.new(0, 8)
-    minimizeCorner.Parent = minimizeBtn
-    
-    minimizeBtn.MouseButton1Click:Connect(function()
-        if not isMinimized then
-            CreateTween(MainFrame, {Size = MINIMIZED_SIZE}, 0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
-            ContentFrame.Visible = false
-            TabContainer.Visible = false
-            local currentPos = MainFrame.AbsolutePosition
-            MainFrame.AnchorPoint = Vector2.new(0, 1)
-            MainFrame.Position = UDim2.new(0, currentPos.X, 1, -currentPos.Y - MINIMIZED_SIZE.Y.Offset)
-            
-            minimizeBtn.Text = "⬜"
-            isMinimized = true
-        else
-            local currentPos = MainFrame.AbsolutePosition
-            MainFrame.AnchorPoint = Vector2.new(0.5, 0.5)
-            MainFrame.Position = UDim2.new(0, currentPos.X + MINIMIZED_SIZE.X.Offset/2, 0, currentPos.Y + MINIMIZED_SIZE.Y.Offset/2)
-
-            CreateTween(MainFrame, {Size = ORIGINAL_SIZE}, 0.5, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
-            task.delay(0.3, function()
-                ContentFrame.Visible = true
-                TabContainer.Visible = true
-            end)
-            
-            minimizeBtn.Text = "_"
-            isMinimized = false
-        end
-    end)
-    
-    minimizeBtn.MouseEnter:Connect(function()
-        CreateTween(minimizeBtn, {BackgroundColor3 = Theme.PrimaryDark}, 0.2)
-    end)
-    
-    minimizeBtn.MouseLeave:Connect(function()
-        CreateTween(minimizeBtn, {BackgroundColor3 = Theme.Tertiary}, 0.2)
-    end)
-
     local closeBtn = Instance.new("TextButton")
     closeBtn.Name = "CloseButton"
     closeBtn.Parent = topBar
@@ -254,14 +204,14 @@ function Library:CreateWindow(config)
     NotificationHolder.Name = "Notifications"
     NotificationHolder.Parent = ScreenGui
     NotificationHolder.BackgroundTransparency = 1
-    NotificationHolder.Position = UDim2.new(1, -320, 1, -40) -- Positioned bottom right
+    NotificationHolder.Position = UDim2.new(1, -320, 0, 20)
     NotificationHolder.Size = UDim2.new(0, 300, 1, -40)
     
     local notifList = Instance.new("UIListLayout")
     notifList.Parent = NotificationHolder
     notifList.SortOrder = Enum.SortOrder.LayoutOrder
     notifList.Padding = UDim.new(0, 10)
-    notifList.VerticalAlignment = Enum.VerticalAlignment.Bottom -- Stacks from bottom up
+    notifList.VerticalAlignment = Enum.VerticalAlignment.Top
     
     local dragging = false
     local dragInput, mousePos, framePos
@@ -286,11 +236,11 @@ function Library:CreateWindow(config)
         if input.UserInputType == Enum.UserInputType.MouseMovement then
             dragInput = input
    
- end
+  end
     end)
     
     UserInputService.InputChanged:Connect(function(input)
-        if input == dragInput and dragging and not isMinimized then
+        if input == dragInput and dragging then
             local delta = input.Position - mousePos
             MainFrame.Position = UDim2.new(
                 framePos.X.Scale,
@@ -304,7 +254,7 @@ function Library:CreateWindow(config)
     
     MainFrame.Size = UDim2.new(0, 0, 0, 0)
     MainFrame.AnchorPoint = Vector2.new(0.5, 0.5)
-    CreateTween(MainFrame, {Size = ORIGINAL_SIZE}, 0.5, Enum.EasingStyle.Back)
+    CreateTween(MainFrame, {Size = UDim2.new(0, 700, 0, 500)}, 0.5, Enum.EasingStyle.Back)
     
     
  local Window = {}
@@ -324,7 +274,7 @@ function Library:CreateWindow(config)
         notif.Parent = NotificationHolder
         notif.BackgroundColor3 = Theme.Tertiary
         notif.BorderSizePixel = 0
-        notif.Size = UDim2.new(1, 0, 0, 85) -- Increased height for duration bar
+        notif.Size = UDim2.new(1, 0, 0, 80)
         notif.ClipsDescendants = true
         notif.Position = UDim2.new(0, 300, 0, 0)
         
@@ -366,26 +316,6 @@ function Library:CreateWindow(config)
         notifContentLabel.TextXAlignment = Enum.TextXAlignment.Left
         notifContentLabel.TextYAlignment = Enum.TextYAlignment.Top
         notifContentLabel.TextWrapped = true
-        
-        -- Duration Bar Implementation
-        local durationBarHolder = Instance.new("Frame")
-        durationBarHolder.Name = "DurationHolder"
-        durationBarHolder.Parent = notif
-        durationBarHolder.BackgroundColor3 = Color3.fromRGB(40, 40, 40) -- Background for the bar
-        durationBarHolder.BackgroundTransparency = 0.5
-        durationBarHolder.BorderSizePixel = 0
-        durationBarHolder.Size = UDim2.new(1, 0, 0, 3)
-        durationBarHolder.Position = UDim2.new(0, 0, 1, -3) -- Aligned to the very bottom
-        
-        local durationBarFill = Instance.new("Frame")
-        durationBarFill.Name = "Fill"
-        durationBarFill.Parent = durationBarHolder
-        durationBarFill.BackgroundColor3 = Theme.Primary
-        durationBarFill.BorderSizePixel = 0
-        durationBarFill.Size = UDim2.new(1, 0, 1, 0) -- Starts at 100% width
-        
-        -- Start the bar shrinking animation
-        CreateTween(durationBarFill, {Size = UDim2.new(0, 0, 1, 0)}, notifDuration, Enum.EasingStyle.Linear)
         
         CreateTween(notif, {Position = UDim2.new(0, 0, 0, 0)}, 0.4, Enum.EasingStyle.Back)
       
@@ -982,8 +912,7 @@ function Library:CreateWindow(config)
                         if child:IsA("TextButton") then
                             child:Destroy()
                         end
-        
-             end
+                    end
                     
                     if not keepCurrent or not table.find(newOptions, currentValue) then
                         currentValue = newOptions[1]
