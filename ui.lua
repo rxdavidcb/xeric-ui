@@ -290,14 +290,14 @@ function Library:CreateWindow(config)
     NotificationHolder.Name = "Notifications"
     NotificationHolder.Parent = ScreenGui
     NotificationHolder.BackgroundTransparency = 1
-    NotificationHolder.Position = UDim2.new(1, -320, 0, 20)
+    NotificationHolder.Position = UDim2.new(1, -320, 1, -420)
     NotificationHolder.Size = UDim2.new(0, 300, 0, 400)
   
     local notifList = Instance.new("UIListLayout")
     notifList.Parent = NotificationHolder
     notifList.SortOrder = Enum.SortOrder.LayoutOrder
     notifList.Padding = UDim.new(0, 10)
-    notifList.VerticalAlignment = Enum.VerticalAlignment.Top
+    notifList.VerticalAlignment = Enum.VerticalAlignment.Bottom
   
     local dragging = false
     local dragInput, mousePos, framePos
@@ -403,7 +403,7 @@ function Library:CreateWindow(config)
         notifTitleLabel.Parent = notif
         notifTitleLabel.BackgroundTransparency = 1
         notifTitleLabel.Position = UDim2.new(0, 40, 0, 10)
-        notifTitleLabel.Size = UDim2.new(1, -100, 0, 20)
+        notifTitleLabel.Size = UDim2.new(1, -50, 0, 20)
         notifTitleLabel.Font = Enum.Font.GothamBold
         notifTitleLabel.Text = notifTitle
         notifTitleLabel.TextColor3 = Theme.Text
@@ -414,7 +414,7 @@ function Library:CreateWindow(config)
         notifContentLabel.Parent = notif
         notifContentLabel.BackgroundTransparency = 1
         notifContentLabel.Position = UDim2.new(0, 40, 0, 35)
-        notifContentLabel.Size = UDim2.new(1, -100, 1, -55)
+        notifContentLabel.Size = UDim2.new(1, -50, 1, -55)
         notifContentLabel.Font = Enum.Font.Gotham
         notifContentLabel.Text = notifContent
         notifContentLabel.TextColor3 = Theme.TextDark
@@ -422,38 +422,6 @@ function Library:CreateWindow(config)
         notifContentLabel.TextXAlignment = Enum.TextXAlignment.Left
         notifContentLabel.TextYAlignment = Enum.TextYAlignment.Top
         notifContentLabel.TextWrapped = true
-      
-        -- Dismiss button
-        local dismissBtn = Instance.new("TextButton")
-        dismissBtn.Name = "Dismiss"
-        dismissBtn.Parent = notif
-        dismissBtn.BackgroundColor3 = Theme.Border
-        dismissBtn.BorderSizePixel = 0
-        dismissBtn.Position = UDim2.new(1, -25, 0, 5)
-        dismissBtn.Size = UDim2.new(0, 20, 0, 20)
-        dismissBtn.Font = Enum.Font.GothamBold
-        dismissBtn.Text = "×"
-        dismissBtn.TextColor3 = Theme.TextDark
-        dismissBtn.TextSize = 14
-        dismissBtn.AutoButtonColor = false
-      
-        local dismissCorner = Instance.new("UICorner")
-        dismissCorner.CornerRadius = UDim.new(0, 4)
-        dismissCorner.Parent = dismissBtn
-      
-        dismissBtn.MouseEnter:Connect(function()
-            CreateTween(dismissBtn, {BackgroundColor3 = Theme.Primary}, 0.2)
-            dismissBtn.TextColor3 = Theme.Text
-        end)
-      
-        dismissBtn.MouseLeave:Connect(function()
-            CreateTween(dismissBtn, {BackgroundColor3 = Theme.Border}, 0.2)
-            dismissBtn.TextColor3 = Theme.TextDark
-        end)
-      
-        dismissBtn.MouseButton1Click:Connect(function()
-            dismissNotification()
-        end)
       
         -- Duration bar
         local durationBarHolder = Instance.new("Frame")
