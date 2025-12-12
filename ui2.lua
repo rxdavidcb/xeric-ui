@@ -59,8 +59,8 @@ function Library:CreateWindow(config)
     config = config or {}
     local windowName = config.Name or "Fluent UI"
     
-    local ORIGINAL_SIZE = UDim2.new(0, 700, 0, 500)
-    local MINIMIZED_SIZE = UDim2.new(0, 200, 0, 50)
+    local ORIGINAL_SIZE = UDim2.new(0, 800, 0, 600) -- Increased window size
+    local MINIMIZED_SIZE = UDim2.new(0, 250, 0, 50) -- Increased minimized size
     
     ScreenGui = Instance.new("ScreenGui")
     ScreenGui.Name = "FluentUI"
@@ -73,7 +73,7 @@ function Library:CreateWindow(config)
     MainFrame.Parent = ScreenGui
     MainFrame.BackgroundColor3 = Theme.Background
     MainFrame.BorderSizePixel = 0
-    MainFrame.Position = UDim2.new(0.5, -350, 0.5, -250)
+    MainFrame.Position = UDim2.new(0.5, -400, 0.5, -300) -- Adjusted position for new size
     MainFrame.Size = ORIGINAL_SIZE
     MainFrame.ClipsDescendants = true
     
@@ -254,14 +254,14 @@ function Library:CreateWindow(config)
     NotificationHolder.Name = "Notifications"
     NotificationHolder.Parent = ScreenGui
     NotificationHolder.BackgroundTransparency = 1
-    NotificationHolder.Position = UDim2.new(1, -320, 0, 20)
+    NotificationHolder.Position = UDim2.new(1, -320, 1, -40) -- Positioned bottom right
     NotificationHolder.Size = UDim2.new(0, 300, 1, -40)
     
     local notifList = Instance.new("UIListLayout")
     notifList.Parent = NotificationHolder
     notifList.SortOrder = Enum.SortOrder.LayoutOrder
     notifList.Padding = UDim.new(0, 10)
-    notifList.VerticalAlignment = Enum.VerticalAlignment.Top
+    notifList.VerticalAlignment = Enum.VerticalAlignment.Bottom -- Stacks from bottom up
     
     local dragging = false
     local dragInput, mousePos, framePos
@@ -324,7 +324,7 @@ function Library:CreateWindow(config)
         notif.Parent = NotificationHolder
         notif.BackgroundColor3 = Theme.Tertiary
         notif.BorderSizePixel = 0
-        notif.Size = UDim2.new(1, 0, 0, 80)
+        notif.Size = UDim2.new(1, 0, 0, 85) -- Increased height for duration bar
         notif.ClipsDescendants = true
         notif.Position = UDim2.new(0, 300, 0, 0)
         
@@ -366,6 +366,26 @@ function Library:CreateWindow(config)
         notifContentLabel.TextXAlignment = Enum.TextXAlignment.Left
         notifContentLabel.TextYAlignment = Enum.TextYAlignment.Top
         notifContentLabel.TextWrapped = true
+        
+        -- Duration Bar Implementation
+        local durationBarHolder = Instance.new("Frame")
+        durationBarHolder.Name = "DurationHolder"
+        durationBarHolder.Parent = notif
+        durationBarHolder.BackgroundColor3 = Color3.fromRGB(40, 40, 40) -- Background for the bar
+        durationBarHolder.BackgroundTransparency = 0.5
+        durationBarHolder.BorderSizePixel = 0
+        durationBarHolder.Size = UDim2.new(1, 0, 0, 3)
+        durationBarHolder.Position = UDim2.new(0, 0, 1, -3) -- Aligned to the very bottom
+        
+        local durationBarFill = Instance.new("Frame")
+        durationBarFill.Name = "Fill"
+        durationBarFill.Parent = durationBarHolder
+        durationBarFill.BackgroundColor3 = Theme.Primary
+        durationBarFill.BorderSizePixel = 0
+        durationBarFill.Size = UDim2.new(1, 0, 1, 0) -- Starts at 100% width
+        
+        -- Start the bar shrinking animation
+        CreateTween(durationBarFill, {Size = UDim2.new(0, 0, 1, 0)}, notifDuration, Enum.EasingStyle.Linear)
         
         CreateTween(notif, {Position = UDim2.new(0, 0, 0, 0)}, 0.4, Enum.EasingStyle.Back)
       
