@@ -1,18 +1,11 @@
---[[
-- Created by fluflu
-- used for Xeric Hub
-- this UI is free to use for everyone else
-]]--
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 local Library = {}
--- UI Variables
 local ScreenGui
 local MainFrame
 local ContentFrame
 local TabContainer
 local NotificationHolder
--- Theme Color
 local Theme = {
     Background = Color3.fromRGB(15, 15, 15),
     Secondary = Color3.fromRGB(20, 20, 20),
@@ -24,12 +17,23 @@ local Theme = {
     Success = Color3.fromRGB(0, 255, 0),
     Border = Color3.fromRGB(40, 40, 40)
 }
--- Custom Animation System
 local Animations = {}
 local Connections = {}
 
 local function lerp(a, b, t)
-    return a + (b - a) * t
+    if typeof(a) == "UDim2" and typeof(b) == "UDim2" then
+        return a:lerp(b, t)
+    elseif typeof(a) == "Color3" and typeof(b) == "Color3" then
+        return Color3.new(
+            a.R + (b.R - a.R) * t,
+            a.G + (b.G - a.G) * t,
+            a.B + (b.B - a.B) * t
+        )
+    elseif typeof(a) == "number" and typeof(b) == "number" then
+        return a + (b - a) * t
+    else
+        return a
+    end
 end
 
 local function easeOutQuad(t)
@@ -37,6 +41,7 @@ local function easeOutQuad(t)
 end
 
 function Animations:Create(object, properties, duration, easingStyle, direction)
+    direction = direction or "Out"
     if not duration or duration <= 0 then
         for prop, value in pairs(properties) do
             if object[prop] ~= nil then
@@ -52,7 +57,7 @@ function Animations:Create(object, properties, duration, easingStyle, direction)
         startProps[prop] = object[prop]
     end
 
-    local easingFunc = easeOutQuad -- Default easing
+    local easingFunc = easeOutQuad
     if easingStyle == "Quad" and direction == "Out" then
         easingFunc = easeOutQuad
     elseif easingStyle == "Back" and direction == "Out" then
@@ -89,7 +94,10 @@ function Animations:Create(object, properties, duration, easingStyle, direction)
 
         if completed then
             connection:Disconnect()
-            table.remove(Connections, table.find(Connections, connection))
+            local index = table.find(Connections, connection)
+            if index then
+                table.remove(Connections, index)
+            end
         end
     end)
 
@@ -97,7 +105,6 @@ function Animations:Create(object, properties, duration, easingStyle, direction)
     return { Disconnect = function() connection:Disconnect() end }
 end
 
--- Custom Ripple Effect
 local function Ripple(object, x, y)
     local circle = Instance.new("Frame")
     circle.Name = "Ripple"
@@ -125,8 +132,7 @@ local function Ripple(object, x, y)
     end)
 end
 
--- Custom Dragging Function
-local function MakeDraggable(frame, handle)
+local function MakeDraggable(frame, handle, onUpdate)
     handle = handle or frame
     local dragging = false
     local dragStart = nil
@@ -134,8 +140,11 @@ local function MakeDraggable(frame, handle)
 
     local function update(input)
         local delta = input.Position - dragStart
-        local newPosX = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
-        frame.Position = newPosX
+        local newPos = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+        frame.Position = newPos
+        if onUpdate then
+            onUpdate(newPos)
+        end
     end
 
     handle.InputBegan:Connect(function(input)
@@ -159,19 +168,16 @@ local function MakeDraggable(frame, handle)
     end)
 end
 
--- Create Main Window
 function Library:CreateWindow(config)
     config = config or {}
     local windowName = config.Name or "Fluent UI"
 
-    -- Create ScreenGui
     ScreenGui = Instance.new("ScreenGui")
     ScreenGui.Name = "FluentUI"
     ScreenGui.Parent = game.CoreGui
     ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
     ScreenGui.ResetOnSpawn = false
 
-    -- Main Frame
     MainFrame = Instance.new("Frame")
     MainFrame.Name = "MainFrame"
     MainFrame.Parent = ScreenGui
@@ -185,7 +191,6 @@ function Library:CreateWindow(config)
     mainCorner.CornerRadius = UDim.new(0, 12)
     mainCorner.Parent = MainFrame
 
-    -- Shadow Effect
     local shadow = Instance.new("ImageLabel")
     shadow.Name = "Shadow"
     shadow.Parent = MainFrame
@@ -199,7 +204,6 @@ function Library:CreateWindow(config)
     shadow.ScaleType = Enum.ScaleType.Slice
     shadow.SliceCenter = Rect.new(49, 49, 450, 450)
 
-    -- Top Bar
     local topBar = Instance.new("Frame")
     topBar.Name = "TopBar"
     topBar.Parent = MainFrame
@@ -218,7 +222,6 @@ function Library:CreateWindow(config)
     topCover.Position = UDim2.new(0, 0, 1, -10)
     topCover.Size = UDim2.new(1, 0, 0, 10)
 
-    -- Title
     local title = Instance.new("TextLabel")
     title.Name = "Title"
     title.Parent = topBar
@@ -231,7 +234,6 @@ function Library:CreateWindow(config)
     title.TextSize = 18
     title.TextXAlignment = Enum.TextXAlignment.Left
 
-    -- Minimize Button
     local minimizeBtn = Instance.new("TextButton")
     minimizeBtn.Name = "MinimizeButton"
     minimizeBtn.Parent = topBar
@@ -249,7 +251,6 @@ function Library:CreateWindow(config)
     minCorner.CornerRadius = UDim.new(0, 8)
     minCorner.Parent = minimizeBtn
 
-    -- Close Button
     local closeBtn = Instance.new("TextButton")
     closeBtn.Name = "CloseButton"
     closeBtn.Parent = topBar
@@ -267,7 +268,6 @@ function Library:CreateWindow(config)
     closeCorner.CornerRadius = UDim.new(0, 8)
     closeCorner.Parent = closeBtn
 
-    -- Minimize Button Events
     minimizeBtn.MouseEnter:Connect(function()
         Animations:Create(minimizeBtn, {BackgroundColor3 = Theme.PrimaryDark}, 0.2)
     end)
@@ -276,7 +276,6 @@ function Library:CreateWindow(config)
         Animations:Create(minimizeBtn, {BackgroundColor3 = Theme.Primary}, 0.2)
     end)
 
-    -- Close Button Events
     closeBtn.MouseButton1Click:Connect(function()
         Animations:Create(MainFrame, {Size = UDim2.new(0, 0, 0, 0)}, 0.3, "Back", "In")
         task.wait(0.3)
@@ -291,7 +290,6 @@ function Library:CreateWindow(config)
         Animations:Create(closeBtn, {BackgroundColor3 = Theme.Primary}, 0.2)
     end)
 
-    -- Minimize Icon
     local Icon = Instance.new("TextButton")
     Icon.Name = "MinimizeIcon"
     Icon.Parent = ScreenGui
@@ -309,10 +307,10 @@ function Library:CreateWindow(config)
     iconCorner.CornerRadius = UDim.new(0, 8)
     iconCorner.Parent = Icon
 
-    -- Icon Draggable using custom MakeDraggable
     MakeDraggable(Icon)
 
-    -- Icon Click to Open
+    local minimized = false
+    local windowPos = MainFrame.Position
     Icon.MouseButton1Click:Connect(function()
         if minimized then
             minimized = false
@@ -321,14 +319,11 @@ function Library:CreateWindow(config)
             MainFrame.Visible = true
             MainFrame.Size = UDim2.new(0, 0, 0, 0)
             MainFrame.AnchorPoint = Vector2.new(0.5, 0.5)
-            Animations:Create(MainFrame, {Size = UDim2.new(0, 700, 0, 500)}, 0.5, "Back")
+            Animations:Create(MainFrame, {Size = UDim2.new(0, 700, 0, 500)}, 0.5, "Back", "Out")
             MainFrame.AnchorPoint = Vector2.new(0, 0)
         end
     end)
 
-    -- Minimize Logic
-    local minimized = false
-    local windowPos = MainFrame.Position
     minimizeBtn.MouseButton1Click:Connect(function()
         if not minimized then
             minimized = true
@@ -343,7 +338,6 @@ function Library:CreateWindow(config)
         end
     end)
 
-    -- Tab Container
     TabContainer = Instance.new("Frame")
     TabContainer.Name = "TabContainer"
     TabContainer.Parent = MainFrame
@@ -367,7 +361,6 @@ function Library:CreateWindow(config)
     tabPadding.PaddingLeft = UDim.new(0, 10)
     tabPadding.PaddingRight = UDim.new(0, 10)
 
-    -- Content Frame
     ContentFrame = Instance.new("Frame")
     ContentFrame.Name = "ContentFrame"
     ContentFrame.Parent = MainFrame
@@ -380,7 +373,6 @@ function Library:CreateWindow(config)
     contentCorner.CornerRadius = UDim.new(0, 10)
     contentCorner.Parent = ContentFrame
 
-    -- Notification Holder
     NotificationHolder = Instance.new("Frame")
     NotificationHolder.Name = "Notifications"
     NotificationHolder.Parent = ScreenGui
@@ -394,19 +386,18 @@ function Library:CreateWindow(config)
     notifList.Padding = UDim.new(0, 10)
     notifList.VerticalAlignment = Enum.VerticalAlignment.Top
 
-    -- Make MainFrame draggable using custom function
-    MakeDraggable(MainFrame, topBar)
+    MakeDraggable(MainFrame, topBar, function(pos)
+        windowPos = pos
+    end)
 
-    -- Intro Animation using custom
     MainFrame.Size = UDim2.new(0, 0, 0, 0)
     MainFrame.AnchorPoint = Vector2.new(0.5, 0.5)
-    Animations:Create(MainFrame, {Size = UDim2.new(0, 700, 0, 500)}, 0.5, "Back")
+    Animations:Create(MainFrame, {Size = UDim2.new(0, 700, 0, 500)}, 0.5, "Back", "Out")
 
     local Window = {}
     Window.Tabs = {}
     Window.CurrentTab = nil
 
-    -- Notification System
     function Window:Notify(config)
         config = config or {}
         local notifTitle = config.Title or "Notification"
@@ -458,18 +449,15 @@ function Library:CreateWindow(config)
         notifContentLabel.TextYAlignment = Enum.TextYAlignment.Top
         notifContentLabel.TextWrapped = true
 
-        -- Animate in using custom
-        Animations:Create(notif, {Position = UDim2.new(0, 0, 0, 0)}, 0.4, "Back")
+        Animations:Create(notif, {Position = UDim2.new(0, 0, 0, 0)}, 0.4, "Back", "Out")
 
-        -- Animate out
         task.delay(notifDuration, function()
-            Animations:Create(notif, {Position = UDim2.new(0, 300, 0, 0)}, 0.3)
+            Animations:Create(notif, {Position = UDim2.new(0, 300, 0, 0)}, 0.3, "Quad", "Out")
             task.wait(0.3)
             notif:Destroy()
         end)
     end
 
-    -- Create Tab (rest remains similar, but replace all CreateTween with Animations:Create)
     function Window:CreateTab(config)
         config = config or {}
         local tabName = config.Name or "Tab"
@@ -559,7 +547,6 @@ function Library:CreateWindow(config)
             Window.CurrentTab = Tab
         end
 
-        -- Add Button
         function Tab:AddButton(config)
             config = config or {}
             local btnName = config.Name or "Button"
@@ -597,7 +584,6 @@ function Library:CreateWindow(config)
             return button
         end
 
-        -- Add Toggle (replace tweens)
         function Tab:AddToggle(config)
             config = config or {}
             local toggleName = config.Name or "Toggle"
@@ -657,10 +643,10 @@ function Library:CreateWindow(config)
 
                 if toggled then
                     Animations:Create(toggleButton, {BackgroundColor3 = Theme.Primary}, 0.2)
-                    Animations:Create(toggleCircle, {Position = UDim2.new(1, -18, 0.5, -8)}, 0.2, "Quad")
+                    Animations:Create(toggleCircle, {Position = UDim2.new(1, -18, 0.5, -8)}, 0.2, "Quad", "Out")
                 else
                     Animations:Create(toggleButton, {BackgroundColor3 = Theme.Border}, 0.2)
-                    Animations:Create(toggleCircle, {Position = UDim2.new(0, 2, 0.5, -8)}, 0.2, "Quad")
+                    Animations:Create(toggleCircle, {Position = UDim2.new(0, 2, 0.5, -8)}, 0.2, "Quad", "Out")
                 end
 
                 pcall(toggleCallback, toggled)
@@ -688,7 +674,6 @@ function Library:CreateWindow(config)
             }
         end
 
-        -- Add Slider (replace tweens, note: slider dragging is input-based, no change needed for animations)
         function Tab:AddSlider(config)
             config = config or {}
             local sliderName = config.Name or "Slider"
@@ -746,7 +731,8 @@ function Library:CreateWindow(config)
             sliderFill.Parent = sliderBar
             sliderFill.BackgroundColor3 = Theme.Primary
             sliderFill.BorderSizePixel = 0
-            sliderFill.Size = UDim2.new((sliderDefault - sliderMin) / (sliderMax - sliderMin), 0, 1, 0)
+            local fillPos = (sliderDefault - sliderMin) / (sliderMax - sliderMin)
+            sliderFill.Size = UDim2.new(fillPos, 0, 1, 0)
 
             local sliderFillCorner = Instance.new("UICorner")
             sliderFillCorner.CornerRadius = UDim.new(1, 0)
@@ -756,7 +742,7 @@ function Library:CreateWindow(config)
             sliderButton.Parent = sliderBar
             sliderButton.BackgroundColor3 = Theme.Text
             sliderButton.BorderSizePixel = 0
-            sliderButton.Position = UDim2.new((sliderDefault - sliderMin) / (sliderMax - sliderMin), -6, 0.5, -6)
+            sliderButton.Position = UDim2.new(fillPos, -6, 0.5, -6)
             sliderButton.Size = UDim2.new(0, 12, 0, 12)
             sliderButton.Text = ""
             sliderButton.AutoButtonColor = false
@@ -766,7 +752,7 @@ function Library:CreateWindow(config)
             sliderBtnCorner.Parent = sliderButton
 
             local currentValue = sliderDefault
-            local dragging = false
+            local sliderDragging = false
 
             local function updateSlider(input)
                 local pos = math.clamp((input.Position.X - sliderBar.AbsolutePosition.X) / sliderBar.AbsoluteSize.X, 0, 1)
@@ -783,22 +769,24 @@ function Library:CreateWindow(config)
             end
 
             sliderButton.MouseButton1Down:Connect(function()
-                dragging = true
+                sliderDragging = true
                 Animations:Create(sliderButton, {Size = UDim2.new(0, 16, 0, 16)}, 0.1)
             end)
 
-            UserInputService.InputEnded:Connect(function(input)
+            local function onInputEnded(input)
                 if input.UserInputType == Enum.UserInputType.MouseButton1 then
-                    dragging = false
+                    sliderDragging = false
                     Animations:Create(sliderButton, {Size = UDim2.new(0, 12, 0, 12)}, 0.1)
                 end
-            end)
+            end
+            UserInputService.InputEnded:Connect(onInputEnded)
 
-            UserInputService.InputChanged:Connect(function(input)
-                if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+            local function onInputChanged(input)
+                if sliderDragging and input.UserInputType == Enum.UserInputType.MouseMovement then
                     updateSlider(input)
                 end
-            end)
+            end
+            UserInputService.InputChanged:Connect(onInputChanged)
 
             sliderBar.InputBegan:Connect(function(input)
                 if input.UserInputType == Enum.UserInputType.MouseButton1 then
@@ -817,7 +805,6 @@ function Library:CreateWindow(config)
             }
         end
 
-        -- Add Dropdown (replace tweens)
         function Tab:AddDropdown(config)
             config = config or {}
             local dropdownName = config.Name or "Dropdown"
@@ -1022,7 +1009,6 @@ function Library:CreateWindow(config)
             }
         end
 
-        -- Add Multi-Dropdown (similar replacements)
         function Tab:AddMultiDropdown(config)
             config = config or {}
             local multiName = config.Name or "Multi Dropdown"
@@ -1231,7 +1217,6 @@ function Library:CreateWindow(config)
             }
         end
 
-        -- Add Label
         function Tab:AddLabel(config)
             config = config or {}
             local labelText = config.Text or "Label"
