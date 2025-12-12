@@ -1,6 +1,8 @@
--- Modern Fluent UI Library (Black & Red Theme)
--- Inspired by Rayfield & Fluent UI
-
+--[[
+- Created by fluflu
+- used for Xeric Hub
+- this UI is free to use for everyone else
+]]--
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
