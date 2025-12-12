@@ -1,9 +1,8 @@
 --[[
-- Created by david
+- Created by fluflu
 - used for Xeric Hub
 - this UI is free to use for everyone else
 ]]--
-
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
@@ -132,7 +131,6 @@ function Library:CreateWindow(config)
     shadow.ScaleType = Enum.ScaleType.Slice
     shadow.SliceCenter = Rect.new(49, 49, 450, 450)
    
-    -- MOVED TABCONTAINER AND CONTENTFRAME CREATION HERE TO FIX NIL ERROR
     TabContainer = Instance.new("Frame")
     TabContainer.Name = "TabContainer"
     TabContainer.Parent = MainFrame
@@ -292,14 +290,14 @@ function Library:CreateWindow(config)
     NotificationHolder.Name = "Notifications"
     NotificationHolder.Parent = ScreenGui
     NotificationHolder.BackgroundTransparency = 1
-    NotificationHolder.Position = UDim2.new(1, -320, 1, -40)
-    NotificationHolder.Size = UDim2.new(0, 300, 1, -40)
+    NotificationHolder.Position = UDim2.new(1, -320, 0, 20)
+    NotificationHolder.Size = UDim2.new(0, 300, 0, 400)
    
     local notifList = Instance.new("UIListLayout")
     notifList.Parent = NotificationHolder
     notifList.SortOrder = Enum.SortOrder.LayoutOrder
     notifList.Padding = UDim.new(0, 10)
-    notifList.VerticalAlignment = Enum.VerticalAlignment.Bottom
+    notifList.VerticalAlignment = Enum.VerticalAlignment.Top
    
     local dragging = false
     local dragInput, mousePos, framePos
@@ -341,6 +339,7 @@ function Library:CreateWindow(config)
     CreateTween(MainFrame, {Size = ORIGINAL_SIZE}, 0.5, Enum.EasingStyle.Back)
    
     AnimateTitle(true)
+   
    
     local Window = {}
     Window.Tabs = {}
