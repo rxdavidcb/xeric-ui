@@ -12,7 +12,7 @@ local MainFrame
 local ContentFrame
 local TabContainer
 local NotificationHolder
--- Theme Colors
+-- Theme Color
 local Theme = {
     Background = Color3.fromRGB(15, 15, 15),
     Secondary = Color3.fromRGB(20, 20, 20),
