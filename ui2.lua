@@ -235,7 +235,7 @@ function Library:CreateWindow(config)
     tabPadding.PaddingTop = UDim.new(0, 10)
     tabPadding.PaddingLeft = UDim.new(0, 10)
     tabPadding.PaddingRight = 
- UDim.new(0, 10)
+ UDim2.new(0, 10)
     
     ContentFrame = Instance.new("Frame")
     ContentFrame.Name = "ContentFrame"
