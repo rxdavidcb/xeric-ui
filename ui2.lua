@@ -23,6 +23,28 @@ local Theme = {
     Success = Color3.fromRGB(0, 255, 0),
     Border = Color3.fromRGB(40, 40, 40)
 }
+local themeFile = "fluentui_theme.cfg"
+local function saveTheme()
+    local r = math.floor(Theme.Primary.R * 255 + 0.5)
+    local g = math.floor(Theme.Primary.G * 255 + 0.5)
+    local b = math.floor(Theme.Primary.B * 255 + 0.5)
+    writefile(themeFile, string.format("R=%d G=%d B=%d", r, g, b))
+end
+local function loadTheme()
+    if isfile and isfile(themeFile) then
+        local data = readfile(themeFile)
+        local r, g, b = data:match("R=(%d+)%s*G=(%d+)%s*B=(%d+)")
+        if r then
+            local color = Color3.fromRGB(tonumber(r), tonumber(g), tonumber(b))
+            Theme.Primary = color
+            local dr = math.floor(tonumber(r) * 0.7)
+            local dg = math.floor(tonumber(g) * 0.7)
+            local db = math.floor(tonumber(b) * 0.7)
+            Theme.PrimaryDark = Color3.fromRGB(dr, dg, db)
+        end
+    end
+end
+loadTheme()
 -- Utility Functions
 local function CreateTween(object, properties, duration, style, direction)
     local tweenInfo = TweenInfo.new(duration or 0.3, style or Enum.EasingStyle.Quad, direction or Enum.EasingDirection.Out)
@@ -293,11 +315,12 @@ function Library:CreateWindow(config)
             Window.CurrentTab.Button.TextColor3 = Theme.Text
         end
         for _, tab in pairs(Window.Tabs) do
-            if tab.Button ~= Window.CurrentTab or not Window.CurrentTab then
+            if tab.Button ~= Window.CurrentTab.Button then
                 tab.Button.BackgroundColor3 = Theme.Tertiary
                 tab.Button.TextColor3 = Theme.TextDark
             end
         end
+        pfp.BackgroundColor3 = Theme.Primary
     end
    
     -- Notification System
@@ -708,6 +731,188 @@ function Library:CreateWindow(config)
                     local pos = (currentValue - sliderMin) / (sliderMax - sliderMin)
                     sliderFill.Size = UDim2.new(pos, 0, 1, 0)
                     sliderButton.Position = UDim2.new(pos, -6, 0.5, -6)
+                end
+            }
+        end
+       
+        -- Add ColorPicker
+        function Tab:AddColorPicker(config)
+            config = config or {}
+            local pickerName = config.Name or "Color Picker"
+            local defaultColor = config.Default or Color3.fromRGB(255, 255, 255)
+            local pickerCallback = config.Callback or function() end
+           
+            local pickerFrame = Instance.new("Frame")
+            pickerFrame.Name = pickerName
+            pickerFrame.Parent = tabContent
+            pickerFrame.BackgroundColor3 = Theme.Tertiary
+            pickerFrame.BorderSizePixel = 0
+            pickerFrame.Size = UDim2.new(1, 0, 0, 120)
+           
+            local pickerCorner = Instance.new("UICorner")
+            pickerCorner.CornerRadius = UDim.new(0, 8)
+            pickerCorner.Parent = pickerFrame
+           
+            local pickerLabel = Instance.new("TextLabel")
+            pickerLabel.Parent = pickerFrame
+            pickerLabel.BackgroundTransparency = 1
+            pickerLabel.Position = UDim2.new(0, 15, 0, 5)
+            pickerLabel.Size = UDim2.new(1, -80, 0, 20)
+            pickerLabel.Font = Enum.Font.GothamBold
+            pickerLabel.Text = pickerName
+            pickerLabel.TextColor3 = Theme.Text
+            pickerLabel.TextSize = 13
+            pickerLabel.TextXAlignment = Enum.TextXAlignment.Left
+           
+            -- Preview
+            local preview = Instance.new("Frame")
+            preview.Name = "Preview"
+            preview.Parent = pickerFrame
+            preview.BackgroundColor3 = defaultColor
+            preview.Position = UDim2.new(1, -65, 0, 5)
+            preview.Size = UDim2.new(0, 40, 0, 20)
+           
+            local previewCorner = Instance.new("UICorner")
+            previewCorner.CornerRadius = UDim.new(0, 4)
+            previewCorner.Parent = preview
+           
+            -- Sub frame for sliders
+            local subFrame = Instance.new("Frame")
+            subFrame.Parent = pickerFrame
+            subFrame.BackgroundTransparency = 1
+            subFrame.Position = UDim2.new(0, 0, 0, 30)
+            subFrame.Size = UDim2.new(1, 0, 1, -30)
+           
+            local subList = Instance.new("UIListLayout")
+            subList.Parent = subFrame
+            subList.SortOrder = Enum.SortOrder.LayoutOrder
+            subList.Padding = UDim.new(0, 5)
+           
+            local subPadding = Instance.new("UIPadding")
+            subPadding.Parent = subFrame
+            subPadding.PaddingLeft = UDim.new(0, 15)
+            subPadding.PaddingRight = UDim.new(0, 15)
+           
+            local channels = {"R", "G", "B"}
+            local values = {math.floor(defaultColor.R * 255), math.floor(defaultColor.G * 255), math.floor(defaultColor.B * 255)}
+            local channelSliders = {}
+           
+            for i, ch in ipairs(channels) do
+                local chFrame = Instance.new("Frame")
+                chFrame.Parent = subFrame
+                chFrame.BackgroundTransparency = 1
+                chFrame.Size = UDim2.new(1, 0, 0, 25)
+               
+                local chLabel = Instance.new("TextLabel")
+                chLabel.Parent = chFrame
+                chLabel.BackgroundTransparency = 1
+                chLabel.Size = UDim2.new(0.3, 0, 1, 0)
+                chLabel.Text = ch
+                chLabel.TextColor3 = Theme.Text
+                chLabel.Font = Enum.Font.Gotham
+                chLabel.TextSize = 12
+                chLabel.TextXAlignment = Enum.TextXAlignment.Left
+               
+                local chValue = Instance.new("TextLabel")
+                chValue.Parent = chFrame
+                chValue.BackgroundTransparency = 1
+                chValue.Position = UDim2.new(0.3, 0, 0, 0)
+                chValue.Size = UDim2.new(0.2, 0, 1, 0)
+                chValue.Text = tostring(values[i])
+                chValue.TextColor3 = Theme.Primary
+                chValue.Font = Enum.Font.GothamBold
+                chValue.TextSize = 12
+                chValue.TextXAlignment = Enum.TextXAlignment.Center
+               
+                local chBar = Instance.new("Frame")
+                chBar.Parent = chFrame
+                chBar.BackgroundColor3 = Theme.Border
+                chBar.Position = UDim2.new(0.5, 0, 0.5, -3)
+                chBar.Size = UDim2.new(0.5, 0, 0, 6)
+               
+                local chBarCorner = Instance.new("UICorner")
+                chBarCorner.CornerRadius = UDim.new(1, 0)
+                chBarCorner.Parent = chBar
+               
+                local chFill = Instance.new("Frame")
+                chFill.Parent = chBar
+                chFill.BackgroundColor3 = Theme.Primary
+                chFill.Size = UDim2.new(values[i] / 255, 0, 1, 0)
+               
+                local chFillCorner = Instance.new("UICorner")
+                chFillCorner.CornerRadius = UDim.new(1, 0)
+                chFillCorner.Parent = chFill
+               
+                local chButton = Instance.new("TextButton")
+                chButton.Parent = chBar
+                chButton.BackgroundColor3 = Theme.Text
+                chButton.Position = UDim2.new(values[i] / 255, -6, 0.5, -6)
+                chButton.Size = UDim2.new(0, 12, 0, 12)
+                chButton.Text = ""
+                chButton.AutoButtonColor = false
+               
+                local chBtnCorner = Instance.new("UICorner")
+                chBtnCorner.CornerRadius = UDim.new(1, 0)
+                chBtnCorner.Parent = chButton
+               
+                local chDragging = false
+               
+                local function updateChSlider(input)
+                    local pos = math.clamp((input.Position.X - chBar.AbsolutePosition.X) / chBar.AbsoluteSize.X, 0, 1)
+                    local value = math.floor(pos * 255)
+                    values[i] = value
+                    chValue.Text = tostring(value)
+                    CreateTween(chFill, {Size = UDim2.new(pos, 0, 1, 0)}, 0.1)
+                    CreateTween(chButton, {Position = UDim2.new(pos, -6, 0.5, -6)}, 0.1)
+                    local r, g, b = values[1], values[2], values[3]
+                    local newColor = Color3.fromRGB(r, g, b)
+                    preview.BackgroundColor3 = newColor
+                    pcall(pickerCallback, newColor)
+                end
+               
+                chButton.MouseButton1Down:Connect(function()
+                    chDragging = true
+                    CreateTween(chButton, {Size = UDim2.new(0, 16, 0, 16)}, 0.1)
+                end)
+               
+                UserInputService.InputEnded:Connect(function(input)
+                    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                        chDragging = false
+                        CreateTween(chButton, {Size = UDim2.new(0, 12, 0, 12)}, 0.1)
+                    end
+                end)
+               
+                UserInputService.InputChanged:Connect(function(input)
+                    if chDragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+                        updateChSlider(input)
+                    end
+                end)
+               
+                chBar.InputBegan:Connect(function(input)
+                    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                        updateChSlider(input)
+                    end
+                end)
+               
+                channelSliders[ch] = {
+                    valueLabel = chValue,
+                    fill = chFill,
+                    button = chButton
+                }
+            end
+           
+            return {
+                Set = function(self, color)
+                    values = {math.floor(color.R * 255), math.floor(color.G * 255), math.floor(color.B * 255)}
+                    for i, ch in ipairs(channels) do
+                        local v = values[i]
+                        local slider = channelSliders[ch]
+                        slider.valueLabel.Text = tostring(v)
+                        local pos = v / 255
+                        slider.fill.Size = UDim2.new(pos, 0, 1, 0)
+                        slider.button.Position = UDim2.new(pos, -6, 0.5, -6)
+                    end
+                    preview.BackgroundColor3 = color
                 end
             }
         end
@@ -1164,9 +1369,11 @@ function Library:CreateWindow(config)
         Default = 700,
         Increment = 10,
         Callback = function(value)
-            local newSize = UDim2.new(0, value, 0, MainFrame.Size.Y.Offset)
-            local newPos = UDim2.new(0.5, -value / 2, MainFrame.Position.Y.Scale, MainFrame.Position.Y.Offset)
-            CreateTween(MainFrame, {Size = newSize, Position = newPos}, 0.3)
+            local newPosX = -value / 2
+            CreateTween(MainFrame, {
+                Size = UDim2.new(0, value, 0, MainFrame.Size.Y.Offset),
+                Position = UDim2.new(0.5, newPosX, 0, 0)
+            }, 0.3)
         end
     })
    
@@ -1177,59 +1384,51 @@ function Library:CreateWindow(config)
         Default = 500,
         Increment = 10,
         Callback = function(value)
-            local newSize = UDim2.new(0, MainFrame.Size.X.Offset, 0, value)
-            CreateTween(MainFrame, {Size = newSize}, 0.3)
+            CreateTween(MainFrame, {Size = UDim2.new(0, MainFrame.Size.X.Offset, 0, value)}, 0.3)
         end
     })
    
-    configTab:AddSlider({
-        Name = "Primary Red",
-        Min = 0,
-        Max = 255,
-        Default = 30,
-        Increment = 1,
+    local presets = {
+        Blue = Color3.fromRGB(30, 144, 255),
+        Red = Color3.fromRGB(255, 0, 0),
+        ["Dark Blue"] = Color3.fromRGB(0, 100, 200),
+        Cyan = Color3.fromRGB(0, 255, 255),
+        Magenta = Color3.fromRGB(255, 0, 255),
+        Green = Color3.fromRGB(0, 255, 0),
+        Orange = Color3.fromRGB(255, 165, 0)
+    }
+   
+    local presetDrop = configTab:AddDropdown({
+        Name = "Theme Preset",
+        Options = {"Blue", "Red", "Dark Blue", "Cyan", "Magenta", "Green", "Orange"},
+        Default = "Blue",
         Callback = function(value)
-            local r = value
-            local g = math.floor(Theme.Primary.G * 255 + 0.5)
-            local b = math.floor(Theme.Primary.B * 255 + 0.5)
-            Theme.Primary = Color3.fromRGB(r, g, b)
-            Theme.PrimaryDark = Color3.fromRGB(math.floor(r * 0.7), math.floor(g * 0.7), math.floor(b * 0.7))
+            Theme.Primary = presets[value]
+            local r = math.floor(Theme.Primary.R * 255 * 0.7 + 0.5)
+            local g = math.floor(Theme.Primary.G * 255 * 0.7 + 0.5)
+            local b = math.floor(Theme.Primary.B * 255 * 0.7 + 0.5)
+            Theme.PrimaryDark = Color3.fromRGB(r, g, b)
             updateElements()
-            Window:Notify({Title = "Theme Updated", Content = "Some elements updated. Reload UI for full effect.", Duration = 3})
+            saveTheme()
+            Window:Notify({
+                Title = "Preset Loaded",
+                Content = value .. " theme applied!",
+                Duration = 2
+            })
         end
     })
    
-    configTab:AddSlider({
-        Name = "Primary Green",
-        Min = 0,
-        Max = 255,
-        Default = 144,
-        Increment = 1,
-        Callback = function(value)
-            local r = math.floor(Theme.Primary.R * 255 + 0.5)
-            local g = value
-            local b = math.floor(Theme.Primary.B * 255 + 0.5)
-            Theme.Primary = Color3.fromRGB(r, g, b)
-            Theme.PrimaryDark = Color3.fromRGB(math.floor(r * 0.7), math.floor(g * 0.7), math.floor(b * 0.7))
+    local primaryPicker = configTab:AddColorPicker({
+        Name = "Primary Color",
+        Default = Theme.Primary,
+        Callback = function(color)
+            Theme.Primary = color
+            local r = math.floor(color.R * 255 * 0.7 + 0.5)
+            local g = math.floor(color.G * 255 * 0.7 + 0.5)
+            local b = math.floor(color.B * 255 * 0.7 + 0.5)
+            Theme.PrimaryDark = Color3.fromRGB(r, g, b)
             updateElements()
-            Window:Notify({Title = "Theme Updated", Content = "Some elements updated. Reload UI for full effect.", Duration = 3})
-        end
-    })
-   
-    configTab:AddSlider({
-        Name = "Primary Blue",
-        Min = 0,
-        Max = 255,
-        Default = 255,
-        Increment = 1,
-        Callback = function(value)
-            local r = math.floor(Theme.Primary.R * 255 + 0.5)
-            local g = math.floor(Theme.Primary.G * 255 + 0.5)
-            local b = value
-            Theme.Primary = Color3.fromRGB(r, g, b)
-            Theme.PrimaryDark = Color3.fromRGB(math.floor(r * 0.7), math.floor(g * 0.7), math.floor(b * 0.7))
-            updateElements()
-            Window:Notify({Title = "Theme Updated", Content = "Some elements updated. Reload UI for full effect.", Duration = 3})
+            saveTheme()
         end
     })
    
