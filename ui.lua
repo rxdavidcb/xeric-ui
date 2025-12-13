@@ -100,7 +100,7 @@ function Library:CreateWindow(config)
     end
   
     ScreenGui = Instance.new("ScreenGui")
-    ScreenGui.Name = "FluentUI"
+    ScreenGui.Name = "Xeric-UI"
     ScreenGui.Parent = game.CoreGui
     ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
     ScreenGui.ResetOnSpawn = false
@@ -385,7 +385,7 @@ function Library:CreateWindow(config)
         notifBar.Parent = notif
         notifBar.BackgroundColor3 = barColor
         notifBar.BorderSizePixel = 0
-        notifBar.Size = UDim2.new(0, 4, 1, 0)
+        notifBar.Size = UDim2.new(0, 6, 1, 0)
       
         local notifIcon = Instance.new("TextLabel")
         notifIcon.Name = "Icon"
