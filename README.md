@@ -16,7 +16,7 @@ A modern, feature-rich UI library for Roblox with smooth animations, responsive 
 ## Installation
 
 ```lua
-local Library = loadstring(game:HttpGet("your-library-url"))()
+local Library = loadstring(game:HttpGet("raw url here"))()
 ```
 
 ---
