@@ -1,5 +1,6 @@
 --[[
 - Created by fluflu
+- Enhanced with TextInput, Divider, and responsive sizing
 - used for Xeric Hub
 - this UI is free to use for everyone else
 ]]--
@@ -14,8 +15,12 @@ local TabContainer
 local NotificationHolder
 local isMinimized = false
 local titleAnimation
-local ORIGINAL_SIZE = UDim2.new(0, 700, 0, 500)
-local MINIMIZED_SIZE = UDim2.new(0, 250, 0, 50)
+
+-- Detect device type
+local isMobile = UserInputService.TouchEnabled and not UserInputService.MouseEnabled
+local ORIGINAL_SIZE = isMobile and UDim2.new(0, 450, 0, 600) or UDim2.new(0, 900, 0, 650)
+local MINIMIZED_SIZE = UDim2.new(0, 350, 0, 50)
+
 local Theme = {
     Background = Color3.fromRGB(15, 15, 15),
     Secondary = Color3.fromRGB(20, 20, 20),
@@ -27,12 +32,14 @@ local Theme = {
     Success = Color3.fromRGB(0, 255, 0),
     Border = Color3.fromRGB(40, 40, 40)
 }
+
 local function CreateTween(object, properties, duration, style, direction)
     local tweenInfo = TweenInfo.new(duration or 0.3, style or Enum.EasingStyle.Quad, direction or Enum.EasingDirection.Out)
     local tween = TweenService:Create(object, tweenInfo, properties)
     tween:Play()
     return tween
 end
+
 local function Ripple(object, x, y)
     local circle = Instance.new("Frame")
     circle.Name = "Ripple"
@@ -49,13 +56,10 @@ local function Ripple(object, x, y)
     corner.Parent = circle
   
     local size = math.max(object.AbsoluteSize.X, object.AbsoluteSize.Y) * 2
-  
     CreateTween(circle, {Size = UDim2.new(0, size, 0, size), BackgroundTransparency = 1}, 0.5)
-  
-    task.delay(0.5, function()
-        circle:Destroy()
-    end)
+    task.delay(0.5, function() circle:Destroy() end)
 end
+
 function Library:CreateWindow(config)
     config = config or {}
     local windowName = config.Name or "Fluent UI"
@@ -63,33 +67,23 @@ function Library:CreateWindow(config)
     local function AnimateTitle(shouldAnimate)
         if shouldAnimate then
             if titleAnimation then titleAnimation:Disconnect() end
-          
             local title = MainFrame.TopBar.Title
             local loop = true
-          
             titleAnimation = RunService.Heartbeat:Connect(function(dt)
                 if not loop then return end
-              
                 local color1 = Theme.TextDark
                 local color2 = Theme.Primary
                 local cycleTime = 1.5
-              
                 local t = (tick() % cycleTime) / cycleTime
-              
                 local progress = t * 2
-              
                 local tweenColor
                 if progress <= 1 then
-                  
                     tweenColor = color1:Lerp(color2, progress)
                 else
-                  
                     tweenColor = color2:Lerp(color1, progress - 1)
                 end
-              
                 title.TextColor3 = tweenColor
             end)
-          
         else
             if titleAnimation then
                 titleAnimation:Disconnect()
@@ -166,14 +160,12 @@ function Library:CreateWindow(config)
     contentCorner.CornerRadius = UDim.new(0, 10)
     contentCorner.Parent = ContentFrame
   
-  
     local topBar = Instance.new("Frame")
     topBar.Name = "TopBar"
     topBar.Parent = MainFrame
     topBar.BackgroundColor3 = Theme.Secondary
     topBar.BorderSizePixel = 0
     topBar.Size = UDim2.new(1, 0, 0, 50)
-  
   
     local topCorner = Instance.new("UICorner")
     topCorner.CornerRadius = UDim.new(0, 12)
@@ -197,6 +189,7 @@ function Library:CreateWindow(config)
     title.TextColor3 = Theme.Text
     title.TextSize = 18
     title.TextXAlignment = Enum.TextXAlignment.Left
+    
     local minimizeBtn = Instance.new("TextButton")
     minimizeBtn.Name = "MinimizeButton"
     minimizeBtn.Parent = topBar
@@ -224,14 +217,17 @@ function Library:CreateWindow(config)
         local deltaY = oldHalfY - targetHalfY
         local currentPos = MainFrame.Position
         local newPos = UDim2.new(currentPos.X.Scale, currentPos.X.Offset + deltaX, currentPos.Y.Scale, currentPos.Y.Offset + deltaY)
+        
         if not isMinimized then
             ContentFrame.Visible = false
             TabContainer.Visible = false
+            CreateTween(title, {Size = UDim2.new(1, -120, 1, 0)}, 0.3)
             local tween = CreateTween(MainFrame, {Size = MINIMIZED_SIZE, Position = newPos}, 0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
             minimizeBtn.Text = "⬜"
             isMinimized = true
             AnimateTitle(true)
         else
+            CreateTween(title, {Size = UDim2.new(0, 300, 1, 0)}, 0.5)
             local tween = CreateTween(MainFrame, {Size = ORIGINAL_SIZE, Position = newPos}, 0.5, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
             tween.Completed:Connect(function()
                 ContentFrame.Visible = true
@@ -250,6 +246,7 @@ function Library:CreateWindow(config)
     minimizeBtn.MouseLeave:Connect(function()
         CreateTween(minimizeBtn, {BackgroundColor3 = Theme.Tertiary}, 0.2)
     end)
+    
     local closeBtn = Instance.new("TextButton")
     closeBtn.Name = "CloseButton"
     closeBtn.Parent = topBar
@@ -281,11 +278,6 @@ function Library:CreateWindow(config)
         CreateTween(closeBtn, {BackgroundColor3 = Theme.Primary}, 0.2)
     end)
   
-  
-    local contentCorner = Instance.new("UICorner")
-    contentCorner.CornerRadius = UDim.new(0, 10)
-    contentCorner.Parent = ContentFrame
-  
     NotificationHolder = Instance.new("Frame")
     NotificationHolder.Name = "Notifications"
     NotificationHolder.Parent = ScreenGui
@@ -303,11 +295,10 @@ function Library:CreateWindow(config)
     local dragInput, mousePos, framePos
   
     topBar.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
             dragging = true
             mousePos = input.Position
             framePos = MainFrame.Position
-          
             input.Changed:Connect(function()
                 if input.UserInputState == Enum.UserInputState.End then
                     dragging = false
@@ -317,7 +308,7 @@ function Library:CreateWindow(config)
     end)
   
     topBar.InputChanged:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseMovement then
+        if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
             dragInput = input
         end
     end)
@@ -325,21 +316,14 @@ function Library:CreateWindow(config)
     UserInputService.InputChanged:Connect(function(input)
         if input == dragInput and dragging then
             local delta = input.Position - mousePos
-            MainFrame.Position = UDim2.new(
-                framePos.X.Scale,
-                framePos.X.Offset + delta.X,
-                framePos.Y.Scale,
-                framePos.Y.Offset + delta.Y
-            )
+            MainFrame.Position = UDim2.new(framePos.X.Scale, framePos.X.Offset + delta.X, framePos.Y.Scale, framePos.Y.Offset + delta.Y)
         end
     end)
   
     MainFrame.Size = UDim2.new(0, 0, 0, 0)
     MainFrame.AnchorPoint = Vector2.new(0.5, 0.5)
     CreateTween(MainFrame, {Size = ORIGINAL_SIZE}, 0.5, Enum.EasingStyle.Back)
-  
     AnimateTitle(true)
-  
   
     local Window = {}
     Window.Tabs = {}
@@ -364,20 +348,9 @@ function Library:CreateWindow(config)
         notifCorner.CornerRadius = UDim.new(0, 10)
         notifCorner.Parent = notif
       
-        -- Type-based left bar and icon
-        local typeColors = {
-            Default = Theme.Primary,
-            Success = Theme.Success,
-            Warning = Color3.fromRGB(255, 165, 0),
-            Error = Color3.fromRGB(255, 0, 0)
-        }
+        local typeColors = {Default = Theme.Primary, Success = Theme.Success, Warning = Color3.fromRGB(255, 165, 0), Error = Color3.fromRGB(255, 0, 0)}
         local barColor = typeColors[notifType] or Theme.Primary
-        local icons = {
-            Default = "ℹ",
-            Success = "✓",
-            Warning = "⚠",
-            Error = "✗"
-        }
+        local icons = {Default = "ℹ", Success = "✓", Warning = "⚠", Error = "✗"}
         local iconText = icons[notifType] or "ℹ"
       
         local notifBar = Instance.new("Frame")
@@ -423,7 +396,6 @@ function Library:CreateWindow(config)
         notifContentLabel.TextYAlignment = Enum.TextYAlignment.Top
         notifContentLabel.TextWrapped = true
       
-        -- Duration bar
         local durationBarHolder = Instance.new("Frame")
         durationBarHolder.Name = "DurationHolder"
         durationBarHolder.Parent = notif
@@ -445,27 +417,21 @@ function Library:CreateWindow(config)
             local offscreenPos = UDim2.new(1, 300, layoutPos.Y.Scale, layoutPos.Y.Offset)
             CreateTween(notif, {Position = offscreenPos}, 0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
             CreateTween(durationBarFill, {Size = UDim2.new(0, 0, 1, 0)}, 0.3)
-            task.delay(0.3, function()
-                notif:Destroy()
-            end)
+            task.delay(0.3, function() notif:Destroy() end)
         end
       
         CreateTween(durationBarFill, {Size = UDim2.new(0, 0, 1, 0)}, notifDuration, Enum.EasingStyle.Linear)
-      
         task.wait()
         local layoutPos = notif.Position
         local offscreenPos = UDim2.new(1, 300, layoutPos.Y.Scale, layoutPos.Y.Offset)
         notif.Position = offscreenPos
         CreateTween(notif, {Position = layoutPos}, 0.4, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
-    
         task.delay(notifDuration, dismissNotification)
     end
   
     function Window:CreateTab(config)
         config = config or {}
         local tabName = config.Name or "Tab"
-        local tabIcon = config.Icon or ""
-      
         local Tab = {}
         Tab.Elements = {}
       
@@ -514,13 +480,11 @@ function Library:CreateWindow(config)
       
         tabButton.MouseButton1Click:Connect(function()
             Ripple(tabButton, tabButton.AbsoluteSize.X / 2, tabButton.AbsoluteSize.Y / 2)
-          
             for _, tab in pairs(Window.Tabs) do
                 tab.Button.BackgroundColor3 = Theme.Tertiary
                 tab.Button.TextColor3 = Theme.TextDark
                 tab.Content.Visible = false
             end
-          
             tabButton.BackgroundColor3 = Theme.Primary
             tabButton.TextColor3 = Theme.Text
             tabContent.Visible = true
@@ -586,6 +550,7 @@ function Library:CreateWindow(config)
           
             return button
         end
+        
         function Tab:AddLabel(config)
             config = config or {}
             local labelText = config.Text or "Label"
@@ -603,6 +568,137 @@ function Library:CreateWindow(config)
             label.TextWrapped = true
           
             return label
+        end
+        
+        function Tab:AddDivider(config)
+            config = config or {}
+            local dividerText = config.Text or nil
+            
+            local dividerFrame = Instance.new("Frame")
+            dividerFrame.Name = "Divider"
+            dividerFrame.Parent = tabContent
+            dividerFrame.BackgroundTransparency = 1
+            dividerFrame.Size = UDim2.new(1, 0, 0, dividerText and 30 or 20)
+            
+            if dividerText then
+                local leftLine = Instance.new("Frame")
+                leftLine.Parent = dividerFrame
+                leftLine.BackgroundColor3 = Theme.Border
+                leftLine.BorderSizePixel = 0
+                leftLine.Position = UDim2.new(0, 0, 0.5, -1)
+                leftLine.Size = UDim2.new(0.35, -5, 0, 2)
+                
+                local dividerLabel = Instance.new("TextLabel")
+                dividerLabel.Parent = dividerFrame
+                dividerLabel.BackgroundTransparency = 1
+                dividerLabel.Position = UDim2.new(0.35, 0, 0, 0)
+                dividerLabel.Size = UDim2.new(0.3, 0, 1, 0)
+                dividerLabel.Font = Enum.Font.GothamBold
+                dividerLabel.Text = dividerText
+                dividerLabel.TextColor3 = Theme.TextDark
+                dividerLabel.TextSize = 12
+                dividerLabel.TextXAlignment = Enum.TextXAlignment.Center
+                
+                local rightLine = Instance.new("Frame")
+                rightLine.Parent = dividerFrame
+                rightLine.BackgroundColor3 = Theme.Border
+                rightLine.BorderSizePixel = 0
+                rightLine.Position = UDim2.new(0.65, 5, 0.5, -1)
+                rightLine.Size = UDim2.new(0.35, -5, 0, 2)
+            else
+                local line = Instance.new("Frame")
+                line.Parent = dividerFrame
+                line.BackgroundColor3 = Theme.Border
+                line.BorderSizePixel = 0
+                line.Position = UDim2.new(0, 0, 0.5, -1)
+                line.Size = UDim2.new(1, 0, 0, 2)
+            end
+            
+            return dividerFrame
+        end
+        
+        function Tab:AddTextInput(config)
+            config = config or {}
+            local inputName = config.Name or "Text Input"
+            local inputPlaceholder = config.Placeholder or "Enter text..."
+            local inputDefault = config.Default or ""
+            local inputCallback = config.Callback or function() end
+            local inputClearOnFocus = config.ClearTextOnFocus or false
+            
+            local inputFrame = Instance.new("Frame")
+            inputFrame.Name = inputName
+            inputFrame.Parent = tabContent
+            inputFrame.BackgroundColor3 = Theme.Tertiary
+            inputFrame.BorderSizePixel = 0
+            inputFrame.Size = UDim2.new(1, 0, 0, 60)
+            
+            local inputCorner = Instance.new("UICorner")
+            inputCorner.CornerRadius = UDim.new(0, 8)
+            inputCorner.Parent = inputFrame
+            
+            local inputLabel = Instance.new("TextLabel")
+            inputLabel.Parent = inputFrame
+            inputLabel.BackgroundTransparency = 1
+            inputLabel.Position = UDim2.new(0, 15, 0, 5)
+            inputLabel.Size = UDim2.new(1, -30, 0, 20)
+            inputLabel.Font = Enum.Font.GothamBold
+            inputLabel.Text = inputName
+            inputLabel.TextColor3 = Theme.Text
+            inputLabel.TextSize = 13
+            inputLabel.TextXAlignment = Enum.TextXAlignment.Left
+            
+            local inputBox = Instance.new("TextBox")
+            inputBox.Parent = inputFrame
+            inputBox.BackgroundColor3 = Theme.Background
+            inputBox.BorderSizePixel = 0
+            inputBox.Position = UDim2.new(0, 15, 0, 30)
+            inputBox.Size = UDim2.new(1, -30, 0, 25)
+            inputBox.Font = Enum.Font.Gotham
+            inputBox.PlaceholderText = inputPlaceholder
+            inputBox.PlaceholderColor3 = Theme.TextDark
+            inputBox.Text = inputDefault
+            inputBox.TextColor3 = Theme.Text
+            inputBox.TextSize = 12
+            inputBox.TextXAlignment = Enum.TextXAlignment.Left
+            inputBox.ClearTextOnFocus = inputClearOnFocus
+            inputBox.ClipsDescendants = true
+            
+            local boxCorner = Instance.new("UICorner")
+            boxCorner.CornerRadius = UDim.new(0, 6)
+            boxCorner.Parent = inputBox
+            
+            local boxPadding = Instance.new("UIPadding")
+            boxPadding.Parent = inputBox
+            boxPadding.PaddingLeft = UDim.new(0, 10)
+            boxPadding.PaddingRight = UDim.new(0, 10)
+            
+            inputBox.Focused:Connect(function()
+                CreateTween(inputBox, {BackgroundColor3 = Color3.fromRGB(30, 30, 30)}, 0.2)
+            end)
+            
+            inputBox.FocusLost:Connect(function(enterPressed)
+                CreateTween(inputBox, {BackgroundColor3 = Theme.Background}, 0.2)
+                if enterPressed then
+                    pcall(inputCallback, inputBox.Text)
+                end
+            end)
+            
+            inputFrame.MouseEnter:Connect(function()
+                CreateTween(inputFrame, {BackgroundColor3 = Color3.fromRGB(35, 35, 35)}, 0.2)
+            end)
+            
+            inputFrame.MouseLeave:Connect(function()
+                CreateTween(inputFrame, {BackgroundColor3 = Theme.Tertiary}, 0.2)
+            end)
+            
+            return {
+                Set = function(self, text)
+                    inputBox.Text = text
+                end,
+                Get = function(self)
+                    return inputBox.Text
+                end
+            }
         end
       
         function Tab:AddToggle(config)
@@ -661,7 +757,6 @@ function Library:CreateWindow(config)
           
             toggleButton.MouseButton1Click:Connect(function()
                 toggled = not toggled
-              
                 if toggled then
                     CreateTween(toggleButton, {BackgroundColor3 = Theme.Primary}, 0.2)
                     CreateTween(toggleCircle, {Position = UDim2.new(1, -18, 0.5, -8)}, 0.2, Enum.EasingStyle.Quad)
@@ -669,7 +764,6 @@ function Library:CreateWindow(config)
                     CreateTween(toggleButton, {BackgroundColor3 = Theme.Border}, 0.2)
                     CreateTween(toggleCircle, {Position = UDim2.new(0, 2, 0.5, -8)}, 0.2, Enum.EasingStyle.Quad)
                 end
-              
                 pcall(toggleCallback, toggled)
             end)
           
@@ -779,14 +873,11 @@ function Library:CreateWindow(config)
                 local pos = math.clamp((input.Position.X - sliderBar.AbsolutePosition.X) / sliderBar.AbsoluteSize.X, 0, 1)
                 local value = math.floor((sliderMin + (sliderMax - sliderMin) * pos) / sliderIncrement + 0.5) * sliderIncrement
                 value = math.clamp(value, sliderMin, sliderMax)
-              
                 currentValue = value
                 sliderValue.Text = tostring(value)
-              
                 local fillPos = (currentValue - sliderMin) / (sliderMax - sliderMin)
                 CreateTween(sliderFill, {Size = UDim2.new(fillPos, 0, 1, 0)}, 0.1)
                 CreateTween(sliderButton, {Position = UDim2.new(fillPos, -6, 0.5, -6)}, 0.1)
-              
                 pcall(sliderCallback, value)
             end
           
@@ -929,13 +1020,11 @@ function Library:CreateWindow(config)
                 optionButton.MouseButton1Click:Connect(function()
                     currentValue = option
                     dropdownLabel.Text = dropdownName .. ": " .. option
-                  
                     for _, btn in ipairs(dropdownList:GetChildren()) do
                         if btn:IsA("TextButton") then
                             CreateTween(btn, {BackgroundColor3 = Theme.Tertiary}, 0.2)
                         end
                     end
-                  
                     CreateTween(optionButton, {BackgroundColor3 = Theme.Primary}, 0.2)
                     pcall(dropdownCallback, option)
                 end)
@@ -955,7 +1044,6 @@ function Library:CreateWindow(config)
           
             dropdownButton.MouseButton1Click:Connect(function()
                 opened = not opened
-              
                 if opened then
                     dropdownList.Visible = true
                     local targetHeight = math.min(#dropdownOptions * 32 + 10, 150)
@@ -981,16 +1069,12 @@ function Library:CreateWindow(config)
                 Refresh = function(self, newOptions, keepCurrent)
                     dropdownOptions = newOptions
                     for _, child in ipairs(dropdownList:GetChildren()) do
-                        if child:IsA("TextButton") then
-                            child:Destroy()
-                        end
+                        if child:IsA("TextButton") then child:Destroy() end
                     end
-                  
                     if not keepCurrent or not table.find(newOptions, currentValue) then
                         currentValue = newOptions[1]
                         dropdownLabel.Text = dropdownName .. ": " .. currentValue
                     end
-                  
                     for _, option in ipairs(newOptions) do
                         local optionButton = Instance.new("TextButton")
                         optionButton.Parent = dropdownList
@@ -1002,21 +1086,17 @@ function Library:CreateWindow(config)
                         optionButton.TextColor3 = Theme.Text
                         optionButton.TextSize = 12
                         optionButton.AutoButtonColor = false
-                      
                         local optionCorner = Instance.new("UICorner")
                         optionCorner.CornerRadius = UDim.new(0, 6)
                         optionCorner.Parent = optionButton
-                      
                         optionButton.MouseButton1Click:Connect(function()
                             currentValue = option
                             dropdownLabel.Text = dropdownName .. ": " .. option
-                          
                             for _, btn in ipairs(dropdownList:GetChildren()) do
                                 if btn:IsA("TextButton") then
                                     CreateTween(btn, {BackgroundColor3 = Theme.Tertiary}, 0.2)
                                 end
                             end
-                          
                             CreateTween(optionButton, {BackgroundColor3 = Theme.Primary}, 0.2)
                             pcall(dropdownCallback, option)
                         end)
@@ -1051,8 +1131,6 @@ function Library:CreateWindow(config)
             multiButton.Size = UDim2.new(1, 0, 0, 40)
             multiButton.Font = Enum.Font.GothamBold
             multiButton.Text = ""
-            multiButton.TextColor3 = Theme.Text
-            multiButton.TextSize = 13
             multiButton.AutoButtonColor = false
           
             local multiLabel = Instance.new("TextLabel")
@@ -1117,9 +1195,7 @@ function Library:CreateWindow(config)
             local function updateLabel()
                 local selected = {}
                 for option, isSelected in pairs(selectedValues) do
-                    if isSelected then
-                        table.insert(selected, option)
-                    end
+                    if isSelected then table.insert(selected, option) end
                 end
                 multiLabel.Text = multiName .. ": " .. (#selected > 0 and table.concat(selected, ", ") or "None")
             end
@@ -1175,7 +1251,6 @@ function Library:CreateWindow(config)
               
                 optionButton.MouseButton1Click:Connect(function()
                     selectedValues[option] = not selectedValues[option]
-                  
                     if selectedValues[option] then
                         CreateTween(checkbox, {BackgroundColor3 = Theme.Primary}, 0.2)
                         checkmark.Text = "✓"
@@ -1183,14 +1258,10 @@ function Library:CreateWindow(config)
                         CreateTween(checkbox, {BackgroundColor3 = Theme.Border}, 0.2)
                         checkmark.Text = ""
                     end
-                  
                     updateLabel()
-                  
                     local selected = {}
                     for opt, isSelected in pairs(selectedValues) do
-                        if isSelected then
-                            table.insert(selected, opt)
-                        end
+                        if isSelected then table.insert(selected, opt) end
                     end
                     pcall(multiCallback, selected)
                 end)
@@ -1206,7 +1277,6 @@ function Library:CreateWindow(config)
           
             multiButton.MouseButton1Click:Connect(function()
                 opened = not opened
-              
                 if opened then
                     multiList.Visible = true
                     local targetHeight = math.min(#multiOptions * 32 + 10, 150)
@@ -1238,4 +1308,5 @@ function Library:CreateWindow(config)
   
     return Window
 end
+
 return Library
