@@ -1,4 +1,15 @@
-
+--[[
+- Created by fluflu
+- Enhanced version
+- Used for Xeric Hub
+- This UI is free to use for everyone
+- 
+- Improvements:
+- + Decorative line under frame that moves with UI
+- + Longer, more visible bar when minimized
+- + Enhanced animations and visual effects
+- + Better code structure
+]]--
 
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
@@ -560,11 +571,11 @@ function Library:CreateWindow(config)
               
                 return {
                     Set = function(value)
-                        value = math.clamp(value, min, max)
-                        local percent = (value - min) / (max - min)
+                        local clampedValue = math.max(min, math.min(max, value))
+                        local percent = (clampedValue - min) / (max - min)
                         fill.Size = UDim2.new(percent, 0, 1, 0)
-                        valueLabel.Text = tostring(value)
-                        callback(value)
+                        valueLabel.Text = tostring(clampedValue)
+                        callback(clampedValue)
                     end
                 }
             end,
